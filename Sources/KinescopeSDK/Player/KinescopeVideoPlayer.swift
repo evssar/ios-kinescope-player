@@ -114,6 +114,11 @@ public class KinescopeVideoPlayer: KinescopePlayer {
         view.playerView.player = self.strategy.player
         view.delegate = self
         self.view = view
+
+        if let video = config.video {
+            set(video: video)
+        }
+
         view.set(options: options)
         view.pipController?.delegate = pipDelegate
         updateTimeline()
@@ -166,13 +171,9 @@ private extension KinescopeVideoPlayer {
         view?.startLoader()
 
         dependencies.inspector.video(
-            id: config.videoId,
+            id: config.videoId ?? "",
             onSuccess: { [weak self] video in
-                self?.video = video
-                self?.select(quality: .auto(hlsLink: video.hlsLink))
-                self?.view?.overlay?.set(title: video.title, subtitle: video.description)
-                self?.view?.set(options: self?.makePlayerOptions(from: video) ?? [])
-                self?.delegate?.playerDidLoadVideo(error: nil)
+                self?.set(video: video)
                 self?.play()
             },
             onError: { [weak self] error in
@@ -181,6 +182,16 @@ private extension KinescopeVideoPlayer {
                 Kinescope.shared.logger?.log(error: error, level: KinescopeLoggerLevel.network)
             }
         )
+    }
+
+    func set(video: KinescopeVideo) {
+        self.video = video
+
+        select(quality: .auto(hlsLink: video.hlsLink))
+        view?.overlay?.set(title: video.title, subtitle: video.description)
+        view?.set(options: makePlayerOptions(from: video))
+
+        delegate?.playerDidLoadVideo(error: nil)
     }
 
     func makePlayerOptions(from video: KinescopeVideo) -> [KinescopePlayerOption] {
@@ -581,6 +592,10 @@ extension KinescopeVideoPlayer: KinescopePlayerViewDelegate {
             .filter { $0 != "original" } ?? []
     }
 
+    func didShowPlaybackSpeed() -> [String] {
+        [0.5, 1, 1.25, 1.5, 2].map { String($0) }
+    }
+
     func didShowAttachments() -> [KinescopeVideoAdditionalMaterial]? {
         return video?.additionalMaterials
     }
@@ -617,6 +632,14 @@ extension KinescopeVideoPlayer: KinescopePlayerViewDelegate {
                                      level: KinescopeLoggerLevel.player)
 
         delegate?.player(changedQualityTo: quality)
+    }
+
+    func didSelect(playbackSpeed: String) {
+        guard let rate = Float(playbackSpeed) else {
+            return
+        }
+
+        strategy.player.playImmediately(atRate: rate)
     }
 
     func didSelectAttachment(with index: Int) {

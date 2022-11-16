@@ -5,8 +5,8 @@
 //  Created by Никита Коробейников on 23.03.2021.
 //
 
+import AVKit
 import UIKit
-import ReactiveDataDisplayManager
 import KinescopeSDK
 
 /// Example of video gallery
@@ -16,42 +16,33 @@ final class VideoListController: UIViewController {
 
     @IBOutlet private weak var tableView: UITableView! {
         didSet {
-            // Needs to make last cell focusable
+            tableView.register(
+                UINib(nibName: cellReuseIdentifire, bundle: nil),
+                forCellReuseIdentifier: cellReuseIdentifire
+            )
+
             tableView.contentInset.bottom = 200
             tableView.estimatedRowHeight = 200
         }
     }
+
     @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
 
-    // MARK: - Private Properties
+    private let inspector: KinescopeInspectable = Kinescope.shared.inspector
+    private let cellReuseIdentifire = "VideoListCell"
 
-    private lazy var progressView = PaginatorView(frame: .init(x: 0, y: 0, width: tableView.frame.width, height: 80))
+    let avPlayerViewController = AVPlayerViewController()
+    var avPlayer: AVPlayer?
+    let movieURL = "https://kinescope.io/202129338/master.m3u8"
 
-    private lazy var adapter = tableView.rddm.baseBuilder
-        .add(plugin: .selectable())
-        .add(plugin: .paginatable(progressView: progressView,
-                                  output: self))
-        .add(plugin: .currentFocus(output: self))
-        .build()
-
-    private weak var focusInput: CurrentCellFocusInput?
-    private weak var paginatableInput: PaginatableInput?
-
-    private lazy var inspector: KinescopeInspectable = Kinescope.shared.inspector
-    private var request = KinescopeVideosRequest(page: 1)
-    private var totalCount = 0
+    private var videos: [KinescopeVideo] = []
 
     // MARK: - UIViewController
 
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Your videos"
-        loadFirstPage()
-    }
-
-    override func viewDidDisappear(_ animated: Bool) {
-        super.viewDidDisappear(animated)
-        focusInput?.clearFocus()
+        loadVideos()
     }
 
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
@@ -70,92 +61,57 @@ final class VideoListController: UIViewController {
 // MARK: - Private Methods
 
 private extension VideoListController {
-
-    func loadFirstPage() {
-
-        // show loader
+    func loadVideos() {
         activityIndicator.isHidden = false
         activityIndicator.startAnimating()
         activityIndicator.hidesWhenStopped = true
 
-        // hide footer
-        paginatableInput?.updatePagination(canIterate: false)
+        inspector.list(
+            request: KinescopeVideosRequest(page: 1),
+            onSuccess: { [weak self] response in
+                guard let self = self else {
+                    return
+                }
 
-        // imitation of loading first page
-        loadVideos { [weak self] canIterate in
-            self?.activityIndicator?.stopAnimating()
-
-            self?.paginatableInput?.updatePagination(canIterate: canIterate)
-        }
-
+                self.videos = response.0
+                self.tableView.reloadData()
+                self.activityIndicator?.stopAnimating()
+            },
+            onError: { _ in
+                print("Error loading videos")
+            })
     }
-
-    func loadVideos(onComplete: @escaping (Bool) -> Void) {
-        inspector.list(request: request,
-                       onSuccess: { [weak self] response in
-                            guard let self = self else {
-                                return
-                            }
-
-                            self.fillAdapter(with: response.0)
-                            self.totalCount += response.0.count
-                            onComplete(response.1.pagination.total > self.totalCount)
-                       },
-                       onError: { _ in
-                            print("Error loading videos")
-                       })
-    }
-
-    func fillAdapter(with videos: [KinescopeVideo]) {
-
-        let generators = videos.map { video -> BaseCellGenerator<VideoListCell> in
-            let generator = VideoListFocusableCellGenerator(with: video)
-
-            generator.didSelectEvent.addListner { [weak self] in
-                self?.performSegue(withIdentifier: "toVideo", sender: video.id)
-            }
-
-            return generator
-        }
-
-        adapter.addCellGenerators(generators)
-
-        adapter.forceRefill { [weak self] in
-            self?.focusInput?.updateFocus()
-        }
-    }
-
 }
 
-// MARK: - CurrentCellFocusOutput
-
-extension VideoListController: CurrentCellFocusOutput {
-
-    func onFocusInitialized(with input: CurrentCellFocusInput) {
-        self.focusInput = input
+extension VideoListController: UITableViewDataSource, UITableViewDelegate {
+    func numberOfSections(in tableView: UITableView) -> Int {
+        min(1, videos.count)
     }
 
-}
-
-// MARK: - PaginatableOutput
-
-extension VideoListController: PaginatableOutput {
-
-    func onPaginationInitialized(with input: PaginatableInput) {
-        paginatableInput = input
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        videos.count
     }
 
-    func loadNextPage(with input: PaginatableInput) {
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(
+            withIdentifier: cellReuseIdentifire,
+            for: indexPath
+        )
 
-        input.updateProgress(isLoading: true)
+        (cell as? VideoListCell)?.configure(with: videos[indexPath.row])
 
-        request = request.next()
-
-        loadVideos { [weak input] canIterate in
-
-            input?.updateProgress(isLoading: false)
-            input?.updatePagination(canIterate: canIterate)
-        }
+        return cell
     }
 
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        performSegue(withIdentifier: "toVideo", sender: videos[indexPath.row].id)
+    }
+
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        (cell as? VideoListCell)?.start()
+    }
+
+    func tableView(_ tableView: UITableView, didEndDisplaying cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        (cell as? VideoListCell)?.stop()
+    }
 }

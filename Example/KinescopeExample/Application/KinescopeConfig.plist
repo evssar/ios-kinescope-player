@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+   KinescopeConfig.plist
+   KinescopeExample
+
+   Created by Eugene Sorokin on 14.11.2022.
+   Copyright (c) 2022 ___ORGANIZATIONNAME___. All rights reserved.
+-->
+<plist version="1.0">
+    <dict>
+        <key>user0</key>
+        <string>281d19f2-c53c-4c00-b3fc-7a8f47271087</string>
+    </dict>
+</plist>

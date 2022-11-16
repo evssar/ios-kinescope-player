@@ -5,7 +5,7 @@
 //  Created by Никита Коробейников on 25.03.2021.
 //
 
-import ReactiveDataDisplayManager
+import UIKit
 
 final class UserCell: UITableViewCell {
 
@@ -19,14 +19,6 @@ final class UserCell: UITableViewCell {
         super.awakeFromNib()
         backgroundColor = .white
     }
-
-}
-
-// MARK: - ConfigurableItem
-
-extension UserCell: ConfigurableItem {
-
-    typealias Model = User
 
     func configure(with model: User) {
         label.text = model.name

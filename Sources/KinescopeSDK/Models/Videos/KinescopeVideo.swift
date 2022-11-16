@@ -21,3 +21,22 @@ public struct KinescopeVideo: Codable {
     public let subtitles: [KinescopeVideoSubtitle]
     public let hlsLink: String
 }
+
+public extension KinescopeVideo {
+    init(hlsLink: String) {
+        self.id = ""
+        self.projectId = ""
+        self.version = 0
+        self.title = ""
+        self.description = ""
+        self.status = ""
+        self.progress = 0
+        self.duration = 0
+        self.assets = []
+        self.chapters = KinescopeVideoChapter(items: [])
+        self.poster = nil
+        self.additionalMaterials = []
+        self.subtitles = []
+        self.hlsLink = hlsLink
+    }
+}

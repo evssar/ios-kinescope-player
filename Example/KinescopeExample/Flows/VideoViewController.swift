@@ -18,6 +18,8 @@ final class VideoViewController: UIViewController {
         return .portrait
     }
 
+    private let playerConfigProvider = KinescopePlayerConfigProvider()
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -27,11 +29,19 @@ final class VideoViewController: UIViewController {
 
         PipManager.shared.closePipIfNeeded(with: videoId)
 
-        player = KinescopeVideoPlayer(config: .init(videoId: videoId))
-        player?.attach(view: playerView)
-        player?.play()
-        playerView.showOverlay(true)
-        player?.pipDelegate = PipManager.shared
+        let hlsLink = "https://kinescope.io/202129338/master.m3u8"
+
+        playerConfigProvider.provide(hlsLink: hlsLink) { [weak self] config in
+            guard let self = self, let config = config else {
+                return
+            }
+
+            self.player = KinescopeVideoPlayer(config: config)
+            self.player?.attach(view: self.playerView)
+            self.player?.play()
+            self.playerView.showOverlay(true)
+            self.player?.pipDelegate = PipManager.shared
+        }
     }
 
 }

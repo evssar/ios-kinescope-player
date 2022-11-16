@@ -6,7 +6,6 @@
 //
 
 import UIKit
-import ReactiveDataDisplayManager
 import KinescopeSDK
 import Kingfisher
 
@@ -29,12 +28,14 @@ final class VideoListCell: UITableViewCell {
         playerView.backgroundColor = .black
         playerView.layer.cornerRadius = 20
         playerView.layer.masksToBounds = true
-        playerView.setLayout(with: .init(gravity: .resizeAspect,
-                                         activityIndicator: UIActivityIndicatorView(style: .white),
-                                         overlay: nil,
-                                         controlPanel: nil,
-                                         sideMenu: .default,
-                                         shadowOverlay: .default))
+        playerView.setLayout(with: .init(
+            gravity: .resizeAspect,
+            activityIndicator: UIActivityIndicatorView(style: .white),
+            overlay: nil,
+            controlPanel: nil,
+            sideMenu: .default,
+            shadowOverlay: .default
+        ))
     }
 
     override func prepareForReuse() {
@@ -53,19 +54,10 @@ final class VideoListCell: UITableViewCell {
         player?.pause()
     }
 
-}
-
-// MARK: - ConfigurableItem
-
-extension VideoListCell: ConfigurableItem {
-
-    typealias Model = KinescopeVideo
-
-    func configure(with model: Model) {
-
+    func configure(with model: KinescopeVideo) {
         playerView.previewView.contentMode = .scaleAspectFit
         playerView.previewView.kf.setImage(with: URL(string: model.poster?.md ?? ""))
-        player = KinescopeVideoPlayer(config: .init(videoId: model.id, looped: true))
+        player = KinescopeVideoPlayer(config: .init(videoId: model.id, video: nil, looped: true))
         player?.attach(view: playerView)
     }
 

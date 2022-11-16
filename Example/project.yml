@@ -1,25 +1,31 @@
 # Название проекта
 name: KinescopeExample
 options:
-  # Версия Xcode
-  xcodeVersion: 12.4
-  # Создание пустых директорий
+  developmentLanguage: ru
+  knownRegions: ["ru", "Base"]
   generateEmptyDirectories: true
-  # Создание групп
   createIntermediateGroups: true
+attributes:
+  ORGANIZATIONNAME: Heads and Hands
 settings:
-  DEVELOPMENT_TEAM: EFAAG9GXN4
+  DEVELOPMENT_TEAM: X86NQK83T7
+  SWIFT_VERSION: 5.0
+  CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER: YES
+  CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED: YES
 targets:
     KinescopeExample:
       dependencies:
+        - package: KinescopeSDK
+        - package: Kingfisher
         - sdk: UIKit.framework
       type: application
       platform: iOS
-      deploymentTarget: 10.0
+      deploymentTarget: 12.0
       scheme:
         configVariants: all
       sources:
         - path: KinescopeExample
+      prebuildScripts:
       info:
         path: KinescopeExample/Application/Info.plist
         properties:
@@ -29,13 +35,25 @@ targets:
           CFBundleShortVersionString: $(MARKETING_VERSION)
           CFBundleVersion: $(CURRENT_PROJECT_VERSION)
           UIBackgroundModes: [audio,airplay,and_picture_in_picture]
+      attributes:
+        ProvisioningStyle: Manual
+        DevelopmentTeam: X86NQK83T7
       settings:
         base:
-          PRODUCT_BUNDLE_IDENTIFIER: io.kinescope.example
-          MARKETING_VERSION: "0.1"
+          PRODUCT_BUNDLE_IDENTIFIER: ru.handh.sportmaster.kinescope.sample
+          MARKETING_VERSION: 0.1
           CURRENT_PROJECT_VERSION: 0
-          VERSIONING_SYSTEM: "apple-generic"
+          VERSIONING_SYSTEM: apple-generic
           DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
           LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks @loader_path/Frameworks"
           CODE_SIGN_IDENTITY: "iPhone Developer"
           CODE_SIGN_STYLE: Automatic
+packages:
+    KinescopeSDK:
+        path: ../
+
+# External
+
+    Kingfisher:
+        url: https://github.com/onevcat/Kingfisher
+        exactVersion: 7.1.0

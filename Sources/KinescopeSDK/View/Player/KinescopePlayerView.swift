@@ -29,6 +29,7 @@ public class KinescopePlayerView: UIView {
 
     private var selectedQuality = NSAttributedString(string: L10n.Player.auto)
     private var selectedSubtitles = NSAttributedString(string: L10n.Player.off)
+    private var selectedPlaybackSpeed = NSAttributedString(string: "1.0")
     private lazy var overlayDebouncer = Debouncer(timeInterval: overlay?.duration ?? 0.0)
 
     // MARK: - Internal Properties
@@ -224,7 +225,7 @@ private extension KinescopePlayerView {
         let model: SideMenu.Model
         switch SideMenu.Settings.getType(by: title) {
         case .playbackSpeed:
-            model = .init(title: title, isRoot: false, isDownloadable: false, items: [])
+            model = makePlaybackSpeedMenuModel(with: title)
         case .subtitles:
             model = makeSubtitlesSideMenuModel(with: title, root: false)
         case .quality:
@@ -260,6 +261,19 @@ private extension KinescopePlayerView {
         let autoTitle = NSAttributedString(string: L10n.Player.auto)
         let selected = selectedQuality.string.hasPrefix(autoTitle.string)
         items.insert(.checkmark(title: autoTitle, selected: selected), at: 0)
+        return .init(title: title, isRoot: false, isDownloadable: false, items: items)
+    }
+
+    func makePlaybackSpeedMenuModel(with title: String) -> SideMenu.Model {
+        let speeds = delegate?.didShowPlaybackSpeed() ?? []
+        var items = speeds.compactMap { speed -> SideMenu.Item in
+            let selected = self.selectedPlaybackSpeed.string.trimmingCharacters(in: .symbols) == speed
+            return .checkmark(title: .init(string: speed), selected: selected)
+        }
+
+        let offTitle = NSAttributedString(string: L10n.Player.off)
+        let selected = selectedSubtitles.string == offTitle.string
+        items.insert(.checkmark(title: offTitle, selected: selected), at: 0)
         return .init(title: title, isRoot: false, isDownloadable: false, items: items)
     }
 
@@ -320,7 +334,9 @@ private extension KinescopePlayerView {
             handleQualityCheckmarkAction(for: title, sideMenu: sideMenu)
         case .subtitles:
             handleSubtitlesCheckmarkAction(for: title, sideMenu: sideMenu)
-        case .playbackSpeed, .none:
+        case .playbackSpeed:
+            handlePlaybackSpeedCheckmarkAction(for: title, sideMenu: sideMenu)
+        case .none:
             break
         }
     }
@@ -329,6 +345,12 @@ private extension KinescopePlayerView {
         delegate?.didSelect(quality: title.string)
         sideMenuWillBeDismissed(sideMenu, withRoot: true)
         set(quality: title.string)
+    }
+
+    func handlePlaybackSpeedCheckmarkAction(for title: NSAttributedString, sideMenu: SideMenu) {
+        delegate?.didSelect(playbackSpeed: title.string)
+        sideMenuWillBeDismissed(sideMenu, withRoot: true)
+        set(playbackSpeed: title.string)
     }
 
     func handleSubtitlesCheckmarkAction(for title: NSAttributedString, sideMenu: SideMenu) {
@@ -342,6 +364,13 @@ private extension KinescopePlayerView {
         let font = config.sideMenu.item.valueFont
         let attributes: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: color]
         selectedQuality = quality.attributedStringWithAssetIconIfNeeded(attributes: attributes)
+    }
+
+    func set(playbackSpeed: String) {
+        let color = config.sideMenu.item.valueColor
+        let font = config.sideMenu.item.valueFont
+        let attributes: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: color]
+        selectedPlaybackSpeed = playbackSpeed.attributedStringWithAssetIconIfNeeded(attributes: attributes)
     }
 
     func set(subtitles: String) {
@@ -459,7 +488,7 @@ extension KinescopePlayerView: PlayerControlOutput {
                                        isDownloadable: false,
                                        items: [
                                         .disclosure(title: L10n.Player.playbackSpeed,
-                                                    value: nil),
+                                                    value: selectedPlaybackSpeed),
                                         .disclosure(title: L10n.Player.subtitles,
                                                     value: selectedSubtitles),
                                         .disclosure(title: L10n.Player.videoQuality,
