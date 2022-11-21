@@ -430,7 +430,6 @@ private extension KinescopePlayerView {
 // MARK: - PlayerOverlayViewDelegate
 
 extension KinescopePlayerView: PlayerOverlayViewDelegate {
-
     func didTap(isSelected: Bool) {
         if isSelected {
             if !(controlPanel?.expanded ?? true) {
@@ -470,6 +469,14 @@ extension KinescopePlayerView: PlayerOverlayViewDelegate {
     func didFastBackward() {
         overlayDebouncer.renewInterval()
         delegate?.didFastBackward()
+    }
+
+    func didMute() {
+        delegate?.didMute()
+    }
+
+    func didClose() {
+        delegate?.didClose()
     }
 }
 

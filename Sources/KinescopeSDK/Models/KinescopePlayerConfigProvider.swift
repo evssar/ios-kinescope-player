@@ -48,7 +48,9 @@ public class KinescopePlayerConfigProvider {
     }
 
     private func makeVideo(from playlist: MasterPlaylist, hlsLink: String) -> KinescopeVideo {
-        KinescopeVideo(
+        let assets = self.assets(playlist: playlist, hlsLink: hlsLink)
+
+        return KinescopeVideo(
             id: "",
             projectId: "",
             version: 0,
@@ -57,29 +59,80 @@ public class KinescopePlayerConfigProvider {
             status: "",
             progress: 0,
             duration: 0,
-            assets: assets(streams: playlist.ext_x_stream_inf, uris: playlist.uri),
+            assets: assets,
             chapters: .init(items: []),
             poster: nil,
             additionalMaterials: [],
-            subtitles: [],
+            subtitles: baseSubtitles(subtitles: assets.map { $0.subtitles ?? [] }),
             hlsLink: hlsLink
         )
     }
 
-    private func assets(streams: [EXT_X_STREAM_INF], uris: [String]) -> [KinescopeVideoAsset] {
-        zip(streams, uris).map { stream, uri in
-            KinescopeVideoAsset(
+    private func assets(playlist: MasterPlaylist, hlsLink: String) -> [KinescopeVideoAsset] {
+        var videos: [KinescopeVideoAsset] = []
+
+        zip(playlist.ext_x_stream_inf, playlist.uri).forEach { stream, uri in
+            let quality = quality(resolution: stream.resolution)
+
+            guard !videos.contains(where: { $0.quality == quality }) else {
+                return
+            }
+
+            let video = KinescopeVideoAsset(
                 id: "",
                 videoId: "",
                 originalName: "",
                 fileSize: 0,
                 filetype: fileType(codecs: stream.codecs),
-                quality: quality(resolution: stream.resolution),
+                quality: quality,
+                subtitles: makeSubtitles(groupId: stream.subtitles, media: playlist.ext_x_media, hlsLink: hlsLink),
                 resolution: resolutinDescription(resolution: stream.resolution),
                 createdAt: "",
                 updatedAt: nil,
-                url: uri
+                url: makeUrl(mediaPath: uri, hlsLink: hlsLink) ?? hlsLink
             )
+
+            videos.append(video)
+        }
+
+        return videos
+    }
+
+    private func baseSubtitles(subtitles: [[KinescopeVideoSubtitle]]) -> [KinescopeVideoSubtitle] {
+        guard !subtitles.isEmpty else {
+            return []
+        }
+
+        var subtitles = subtitles
+        var minIndex: Int = 0
+
+        subtitles.enumerated().forEach { offset, _ in
+            if subtitles[minIndex].count > subtitles[offset].count {
+                minIndex = offset
+            }
+        }
+
+        let minSubtitles = subtitles[minIndex]
+        subtitles.remove(at: minIndex)
+
+        let flatSubtitles = subtitles.flatMap { $0 }
+
+        return minSubtitles.filter { subtitle in
+            flatSubtitles.contains(where: { $0.title == subtitle.title })
+        }
+    }
+
+    private func makeSubtitles(groupId: String?, media: [EXT_X_MEDIA], hlsLink: String) -> [KinescopeVideoSubtitle]? {
+        guard let groupId = groupId else {
+            return nil
+        }
+
+        return media.filter({ $0.group_id == groupId }).compactMap { media in
+            guard let language = media.language, let url = makeUrl(mediaPath: media.uri ?? "", hlsLink: hlsLink) else {
+                return nil
+            }
+
+            return KinescopeVideoSubtitle(description: media.name, language: language, url: url)
         }
     }
 
@@ -106,6 +159,22 @@ public class KinescopePlayerConfigProvider {
             return "mp4"
         } else {
             return ""
+        }
+    }
+
+    private func makeUrl(mediaPath: String, hlsLink: String) -> String? {
+        guard var baseUrl = URL(string: hlsLink)?.deletingLastPathComponent(),
+                !mediaPath.isEmpty else {
+            return nil
+        }
+
+        let mediaPath = mediaPath.hasPrefix("/") ? String(mediaPath.dropFirst()) : mediaPath
+
+        if mediaPath.contains("://") {
+            return mediaPath
+        } else {
+            baseUrl.appendPathComponent(mediaPath, isDirectory: false)
+            return baseUrl.absoluteString
         }
     }
 }

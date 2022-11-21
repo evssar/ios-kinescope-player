@@ -1,7 +1,9 @@
-protocol PlayerOverlayViewDelegate: class {
+protocol PlayerOverlayViewDelegate: AnyObject {
     func didTap(isSelected: Bool)
     func didPlay()
     func didPause()
     func didFastForward()
     func didFastBackward()
+    func didMute()
+    func didClose()
 }

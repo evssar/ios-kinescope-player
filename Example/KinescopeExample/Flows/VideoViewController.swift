@@ -29,7 +29,12 @@ final class VideoViewController: UIViewController {
 
         PipManager.shared.closePipIfNeeded(with: videoId)
 
-        let hlsLink = "https://kinescope.io/202129338/master.m3u8"
+        let hlsLink = "https://d3rlna7iyyu8wu.cloudfront.net/skip_armstrong/skip_armstrong_multi_language_subs.m3u8"
+
+
+//    https://d3rlna7iyyu8wu.cloudfront.net/skip_armstrong/subtitles/ac3_51_eng/subs.m3u8
+
+//        let hlsLink = "https://kinescope.io/202129338/master.m3u8"
 
         playerConfigProvider.provide(hlsLink: hlsLink) { [weak self] config in
             guard let self = self, let config = config else {
@@ -43,7 +48,6 @@ final class VideoViewController: UIViewController {
             self.player?.pipDelegate = PipManager.shared
         }
     }
-
 }
 
 extension VideoViewController: UINavigationControllerDelegate {

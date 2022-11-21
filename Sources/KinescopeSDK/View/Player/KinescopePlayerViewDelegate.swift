@@ -1,7 +1,9 @@
-protocol KinescopePlayerViewDelegate: class {
+protocol KinescopePlayerViewDelegate: AnyObject {
     func didPlay()
     func didPause()
     func didSeek(to position: Double)
+    func didMute()
+    func didClose()
     func didConfirmSeek()
     func didFastForward()
     func didFastBackward()

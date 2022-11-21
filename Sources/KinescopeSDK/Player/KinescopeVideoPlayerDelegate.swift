@@ -7,7 +7,7 @@
 
 import AVFoundation
 
-public protocol KinescopeVideoPlayerDelegate: class {
+public protocol KinescopeVideoPlayerDelegate: AnyObject {
     /// Triggered on successfull play action
     func playerDidPlay()
     /// Triggered on video load finish with error(error == nil means no error)
@@ -16,6 +16,8 @@ public protocol KinescopeVideoPlayerDelegate: class {
     func playerDidPause()
     /// Triggered on stop action
     func playerDidStop()
+    /// Triggered on close action
+    func playerDidClose()
     /// Triggered on AVPlayer playback position change
     func player(playbackPositionMovedTo time: TimeInterval)
     /// Triggered on AVPlayer buffer position change
@@ -41,19 +43,20 @@ public protocol KinescopeVideoPlayerDelegate: class {
 }
 
 public extension KinescopeVideoPlayerDelegate {
-    func playerDidPlay() { }
-    func playerDidLoadVideo(error: Error?) { }
-    func playerDidPause() { }
-    func playerDidStop() { }
-    func player(playbackPositionMovedTo time: TimeInterval) { }
-    func player(playbackBufferMovedTo time: TimeInterval) { }
-    func player(changedStatusTo status: AVPlayer.Status) { }
-    func player(changedItemStatusTo status: AVPlayerItem.Status) { }
-    func player(changedTimeControlStatusTo status: AVPlayer.TimeControlStatus) { }
-    func player(changedPresentationSizeTo size: CGSize) { }
-    func player(didSeekTo time: TimeInterval) { }
-    func player(timelinePositionMovedTo position: Double) { }
-    func player(didFastForwardTo time: TimeInterval) { }
-    func player(didFastBackwardTo time: TimeInterval) { }
-    func player(changedQualityTo quality: String) { }
+    func playerDidPlay() {}
+    func playerDidLoadVideo(error: Error?) {}
+    func playerDidPause() {}
+    func playerDidStop() {}
+    func playerDidClose() {}
+    func player(playbackPositionMovedTo time: TimeInterval) {}
+    func player(playbackBufferMovedTo time: TimeInterval) {}
+    func player(changedStatusTo status: AVPlayer.Status) {}
+    func player(changedItemStatusTo status: AVPlayerItem.Status) {}
+    func player(changedTimeControlStatusTo status: AVPlayer.TimeControlStatus) {}
+    func player(changedPresentationSizeTo size: CGSize) {}
+    func player(didSeekTo time: TimeInterval) {}
+    func player(timelinePositionMovedTo position: Double) {}
+    func player(didFastForwardTo time: TimeInterval) {}
+    func player(didFastBackwardTo time: TimeInterval) {}
+    func player(changedQualityTo quality: String) {}
 }

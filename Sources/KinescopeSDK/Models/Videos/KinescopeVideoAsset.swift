@@ -5,6 +5,7 @@ public struct KinescopeVideoAsset: Codable {
     public let fileSize: Int
     public let filetype: String
     public let quality: String
+    public let subtitles: [KinescopeVideoSubtitle]?
     public let resolution: String
     public let createdAt: String
     public let updatedAt: String?

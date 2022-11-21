@@ -15,15 +15,20 @@ class PlayerOverlayView: UIControl {
 
     // MARK: - Properties
 
-    let playPauseImageView = UIImageView()
-    let fastForwardImageView = UIImageView()
-    let fastBackwardImageView = UIImageView()
-    let nameView: VideoNameView
+    private let playPauseImageView = UIImageView()
+    private let fastForwardImageView = UIImageView()
+    private let fastBackwardImageView = UIImageView()
+    private let muteButton = UIButton()
+    private let closeButton = UIButton()
+    private let nameView: VideoNameView
     private let contentView = UIView()
     private let config: KinescopePlayerOverlayConfiguration
+
     private weak var delegate: PlayerOverlayViewDelegate?
+
     private var isPlaying = false
     private var isRewind = false
+
     var duration: TimeInterval {
         return config.duration
     }
@@ -81,7 +86,7 @@ private extension PlayerOverlayView {
     }
 
     func configureContentView() {
-        contentView.isUserInteractionEnabled = false
+        contentView.isUserInteractionEnabled = true
         contentView.backgroundColor = config.backgroundColor
         addSubview(contentView)
         stretch(view: contentView)
@@ -90,6 +95,8 @@ private extension PlayerOverlayView {
         configurePlayPauseImageView()
         configureFastForwardImageView()
         configureFastBackwardImageView()
+        configureMuteButton()
+        configureCloseButton()
     }
 
     func configurePlayPauseImageView() {
@@ -117,20 +124,39 @@ private extension PlayerOverlayView {
         contentView.topChildWithSafeArea(view: nameView)
     }
 
+    func configureMuteButton() {
+        muteButton.setImage(UIImage.image(named: "mute"), for: .normal)
+        muteButton.addTarget(self, action: #selector(muteButtonTap(sender:)), for: .touchUpInside)
+        contentView.addSubview(muteButton)
+        contentView.topLeftChildWithSafeArea(view: muteButton)
+    }
+
+    func configureCloseButton() {
+        closeButton.setImage(UIImage.image(named: "close-big"), for: .normal)
+        closeButton.addTarget(self, action: #selector(closeButtonTap(sender:)), for: .touchUpInside)
+        contentView.addSubview(closeButton)
+        contentView.topRightChildWithSafeArea(view: closeButton)
+    }
+
     func addGestureRecognizers() {
         let singleTapGestureRecognizer = UITapGestureRecognizer(target: self,
                                                              action: #selector(singleTapAction))
+
+        singleTapGestureRecognizer.cancelsTouchesInView = false
+        singleTapGestureRecognizer.delegate = self
         singleTapGestureRecognizer.numberOfTapsRequired = 1
         addGestureRecognizer(singleTapGestureRecognizer)
 
         let doubleTapGestureRecognizer = UITapGestureRecognizer(target: self,
                                                              action: #selector(doubleTapAction))
+
+        doubleTapGestureRecognizer.cancelsTouchesInView = false
+        doubleTapGestureRecognizer.delegate = self
         doubleTapGestureRecognizer.numberOfTapsRequired = 2
         addGestureRecognizer(doubleTapGestureRecognizer)
 
         singleTapGestureRecognizer.require(toFail: doubleTapGestureRecognizer)
     }
-
 }
 
 // MARK: - Actions
@@ -206,6 +232,30 @@ private extension PlayerOverlayView {
                     self.fastBackwardImageView.transform = .identity
                 }
             )
+        }
+    }
+
+    @objc
+    func muteButtonTap(sender: UIButton) {
+        delegate?.didMute()
+    }
+
+    @objc
+    func closeButtonTap(sender: UIButton) {
+        delegate?.didClose()
+    }
+}
+
+extension PlayerOverlayView: UIGestureRecognizerDelegate {
+    override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        guard contentView.alpha == 1 else {
+            return true
+        }
+
+        let location = gestureRecognizer.location(in: self)
+
+        return [muteButton, closeButton].allSatisfy {
+            !$0.frame.contains(location)
         }
     }
 }

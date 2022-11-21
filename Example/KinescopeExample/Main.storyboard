@@ -91,7 +91,7 @@
                                     <outlet property="delegate" destination="QTb-d7-Rhh" id="rVF-Qv-d4V"/>
                                 </connections>
                             </tableView>
-                            <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" style="medium" translatesAutoresizingMaskIntoConstraints="NO" id="OP4-E5-go6">
+                            <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" style="gray" translatesAutoresizingMaskIntoConstraints="NO" id="OP4-E5-go6">
                                 <rect key="frame" x="197" y="467" width="20" height="20"/>
                             </activityIndicatorView>
                         </subviews>
@@ -126,17 +126,15 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="0Mt-Oj-buA" customClass="KinescopePlayerView" customModule="KinescopeSDK">
-                                <rect key="frame" x="0.0" y="92" width="414" height="400"/>
+                                <rect key="frame" x="0.0" y="92" width="414" height="804"/>
                                 <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                <constraints>
-                                    <constraint firstAttribute="height" constant="400" id="C1n-q6-hl7"/>
-                                </constraints>
                             </view>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="GgO-Ol-gXU"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
                             <constraint firstItem="GgO-Ol-gXU" firstAttribute="trailing" secondItem="0Mt-Oj-buA" secondAttribute="trailing" id="2NM-Xr-JMK"/>
+                            <constraint firstAttribute="bottom" secondItem="0Mt-Oj-buA" secondAttribute="bottom" id="Ih2-i0-bBM"/>
                             <constraint firstItem="0Mt-Oj-buA" firstAttribute="leading" secondItem="GgO-Ol-gXU" secondAttribute="leading" id="LjU-VV-QKJ"/>
                             <constraint firstItem="GgO-Ol-gXU" firstAttribute="top" secondItem="0Mt-Oj-buA" secondAttribute="top" id="Wmo-Wl-sTw"/>
                         </constraints>

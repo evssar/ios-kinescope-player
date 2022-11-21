@@ -4,6 +4,7 @@ import UIKit
 
 // swiftlint:disable file_length
 public class KinescopeVideoPlayer: KinescopePlayer {
+    public weak var delegate: KinescopeVideoPlayerDelegate?
 
     public weak var pipDelegate: AVPictureInPictureControllerDelegate? {
         didSet {
@@ -43,7 +44,6 @@ public class KinescopeVideoPlayer: KinescopePlayer {
     private var isOverlayed = false
     private var savedTime: CMTime = .zero
     private weak var miniView: KinescopePlayerView?
-    private weak var delegate: KinescopeVideoPlayerDelegate?
 
     private var video: KinescopeVideo?
     private let config: KinescopePlayerConfig
@@ -513,8 +513,15 @@ extension KinescopeVideoPlayer: KinescopePlayerViewDelegate {
         seek(to: time)
     }
 
-    func didSelect(option: KinescopePlayerOption) {
+    func didMute() {
+        strategy.player.isMuted.toggle()
     }
+
+    func didClose() {
+        delegate?.playerDidClose()
+    }
+
+    func didSelect(option: KinescopePlayerOption) {}
 
     func didFastForward() {
         guard

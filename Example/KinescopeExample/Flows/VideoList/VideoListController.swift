@@ -30,6 +30,7 @@ final class VideoListController: UIViewController {
 
     private let inspector: KinescopeInspectable = Kinescope.shared.inspector
     private let cellReuseIdentifire = "VideoListCell"
+    private let playerConfigProvider = KinescopePlayerConfigProvider()
 
     let avPlayerViewController = AVPlayerViewController()
     var avPlayer: AVPlayer?
@@ -104,7 +105,31 @@ extension VideoListController: UITableViewDataSource, UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        performSegue(withIdentifier: "toVideo", sender: videos[indexPath.row].id)
+        /* performSegue(withIdentifier: "toVideo", sender: videos[indexPath.row].id) */
+
+        let hlsLink = "https://d3rlna7iyyu8wu.cloudfront.net/skip_armstrong/skip_armstrong_multi_language_subs.m3u8"
+
+        /* let hlsLink = "https://kinescope.io/202129338/master.m3u8" */
+
+        playerConfigProvider.provide(hlsLink: hlsLink) { [weak self] config in
+            guard let self = self, let config = config else {
+                return
+            }
+
+            let player = KinescopeFullScreenVideoPlayer(config: config)
+            player.pipDelegate = PipManager.shared
+            player.delegate = self
+
+            let playerVC = KinescopeVideoPlayerViewController(
+                player: player,
+                config: .init(
+                    orientation: .landscapeRight,
+                    orientationMask: .all,
+                    backgroundColor: .black
+                ))
+
+            self.present(playerVC, animated: true)
+        }
     }
 
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
@@ -113,5 +138,11 @@ extension VideoListController: UITableViewDataSource, UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, didEndDisplaying cell: UITableViewCell, forRowAt indexPath: IndexPath) {
         (cell as? VideoListCell)?.stop()
+    }
+}
+
+extension VideoListController: KinescopeVideoPlayerDelegate {
+    func playerDidClose() {
+        dismiss(animated: true)
     }
 }
