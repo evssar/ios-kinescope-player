@@ -27,6 +27,7 @@ final public class KinescopeVideoPlayerViewController: UIViewController {
         super.init(nibName: nil, bundle: nil)
 
         modalPresentationStyle = .overFullScreen
+        modalTransitionStyle = .crossDissolve
         modalPresentationCapturesStatusBarAppearance = true
     }
 

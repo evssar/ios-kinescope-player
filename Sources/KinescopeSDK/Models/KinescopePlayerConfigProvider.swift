@@ -16,11 +16,12 @@ public class KinescopePlayerConfigProvider {
     public func provide(
         videoId: String? = nil,
         hlsLink: String? = nil,
+        isMuted: Bool = true,
         looped: Bool = false,
         completion: @escaping (KinescopePlayerConfig?) -> Void
     ) {
         if let videoId = videoId {
-            completion(KinescopePlayerConfig(videoId: videoId, video: nil, looped: looped))
+            completion(KinescopePlayerConfig(videoId: videoId, video: nil, isMuted: isMuted, looped: looped))
         } else if let hlsLink = hlsLink, let hlsUrl = URL(string: hlsLink) {
             decoder.decode(MasterPlaylist.self, from: hlsUrl) { [weak self] result in
                 guard let self = self else {
@@ -30,7 +31,7 @@ public class KinescopePlayerConfigProvider {
                 switch result {
                 case let .success(playlist):
                     let video = self.makeVideo(from: playlist, hlsLink: hlsLink)
-                    let config = KinescopePlayerConfig(videoId: nil, video: video, looped: looped)
+                    let config = KinescopePlayerConfig(videoId: nil, video: video, isMuted: isMuted, looped: looped)
 
                     DispatchQueue.main.async {
                         completion(config)

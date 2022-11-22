@@ -45,18 +45,6 @@ final class VideoListController: UIViewController {
         title = "Your videos"
         loadVideos()
     }
-
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        super.prepare(for: segue, sender: sender)
-        guard
-            let destination = segue.destination as? VideoViewController,
-            let id = sender as? String
-        else {
-            return
-        }
-
-        destination.videoId = id
-    }
 }
 
 // MARK: - Private Methods
@@ -82,6 +70,32 @@ private extension VideoListController {
                 print("Error loading videos")
             })
     }
+
+    private func openVideo(hlsLink: String?) {
+        guard let hlsLink = hlsLink else {
+            return
+        }
+
+        playerConfigProvider.provide(hlsLink: hlsLink, isMuted: false) { [weak self] config in
+            guard let self = self, let config = config else {
+                return
+            }
+
+            let player = KinescopeFullScreenVideoPlayer(config: config)
+            player.pipDelegate = PipManager.shared
+            player.delegate = self
+
+            let playerVC = KinescopeVideoPlayerViewController(
+                player: player,
+                config: .init(
+                    orientation: .landscapeRight,
+                    orientationMask: .all,
+                    backgroundColor: .black
+                ))
+
+            self.present(playerVC, animated: true)
+        }
+    }
 }
 
 extension VideoListController: UITableViewDataSource, UITableViewDelegate {
@@ -105,31 +119,7 @@ extension VideoListController: UITableViewDataSource, UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        /* performSegue(withIdentifier: "toVideo", sender: videos[indexPath.row].id) */
-
-        let hlsLink = "https://d3rlna7iyyu8wu.cloudfront.net/skip_armstrong/skip_armstrong_multi_language_subs.m3u8"
-
-        /* let hlsLink = "https://kinescope.io/202129338/master.m3u8" */
-
-        playerConfigProvider.provide(hlsLink: hlsLink) { [weak self] config in
-            guard let self = self, let config = config else {
-                return
-            }
-
-            let player = KinescopeFullScreenVideoPlayer(config: config)
-            player.pipDelegate = PipManager.shared
-            player.delegate = self
-
-            let playerVC = KinescopeVideoPlayerViewController(
-                player: player,
-                config: .init(
-                    orientation: .landscapeRight,
-                    orientationMask: .all,
-                    backgroundColor: .black
-                ))
-
-            self.present(playerVC, animated: true)
-        }
+        openVideo(hlsLink: videos[indexPath.row].hlsLink)
     }
 
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {

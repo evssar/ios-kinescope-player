@@ -9,6 +9,8 @@ import UIKit
 
 protocol PlayerOverlayInput: VideoNameInput {
     func set(playing: Bool)
+
+    func set(isMute: Bool)
 }
 
 class PlayerOverlayView: UIControl {
@@ -72,6 +74,11 @@ extension PlayerOverlayView: PlayerOverlayInput {
     func set(playing: Bool) {
         self.isPlaying = playing
         playPauseImageView.image = playing ? config.pauseImage : config.playImage
+    }
+
+    func set(isMute: Bool) {
+        let image = UIImage.image(named: isMute ? "mute" : "unmute")
+        muteButton.setImage(image, for: .normal)
     }
 }
 

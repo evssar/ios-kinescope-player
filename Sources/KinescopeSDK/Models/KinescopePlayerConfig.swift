@@ -16,11 +16,15 @@ public struct KinescopePlayerConfig {
     /// If value is `true` show video in infinite loop.
     public let looped: Bool
 
+    /// if value is `true` video is muted
+    public let isMuted: Bool
+
     /// - parameter videoId: Id of concrete video. For example from [GET Videos list](https://documenter.getpostman.com/view/10589901/TVCcXpNM)
     /// - parameter looped: If value is `true` show video in infinite loop. By default is `false`
-    public init(videoId: String?, video: KinescopeVideo?, looped: Bool = false) {
+    public init(videoId: String?, video: KinescopeVideo?, isMuted: Bool = true, looped: Bool = false) {
         self.videoId = videoId
         self.video = video
+        self.isMuted = isMuted
         self.looped = looped
     }
 

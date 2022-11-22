@@ -70,6 +70,7 @@ public class KinescopeVideoPlayer: KinescopePlayer {
     init(config: KinescopePlayerConfig, dependencies: KinescopePlayerDependencies) {
         self.dependencies = dependencies
         self.config = config
+        self.strategy.player.isMuted = config.isMuted
         addNotofications()
     }
 
@@ -514,7 +515,11 @@ extension KinescopeVideoPlayer: KinescopePlayerViewDelegate {
     }
 
     func didMute() {
-        strategy.player.isMuted.toggle()
+        if !config.isMuted {
+            strategy.player.isMuted.toggle()
+        } else {
+            strategy.player.isMuted = true
+        }
     }
 
     func didClose() {

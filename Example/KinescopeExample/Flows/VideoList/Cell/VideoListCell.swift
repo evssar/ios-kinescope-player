@@ -57,7 +57,14 @@ final class VideoListCell: UITableViewCell {
     func configure(with model: KinescopeVideo) {
         playerView.previewView.contentMode = .scaleAspectFit
         playerView.previewView.kf.setImage(with: URL(string: model.poster?.md ?? ""))
-        player = KinescopeVideoPlayer(config: .init(videoId: model.id, video: nil, looped: true))
+        player = KinescopeVideoPlayer(
+            config: .init(
+                videoId: model.id,
+                video: nil,
+                isMuted: true,
+                looped: true
+            ))
+
         player?.attach(view: playerView)
     }
 

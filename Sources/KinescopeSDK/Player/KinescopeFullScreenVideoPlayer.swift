@@ -22,13 +22,6 @@ public class KinescopeFullScreenVideoPlayer: KinescopePlayer {
     // MARK: - Private Properties
 
     private let dependencies: KinescopePlayerDependencies
-    private lazy var strategy: PlayingStrategy = {
-        dependencies.provide(for: config)
-    }()
-    private lazy var innerEventsHandler: InnerEventsHandler = {
-        let service = AnalyticsNetworkService(transport: Transport(), config: Kinescope.shared.config)
-        return InnerEventsProtoHandler(service: service)
-    }()
 
     private weak var view: KinescopePlayerView?
 
@@ -36,24 +29,37 @@ public class KinescopeFullScreenVideoPlayer: KinescopePlayer {
     private var playerStatusObserver: NSKeyValueObservation?
     private var itemStatusObserver: NSKeyValueObservation?
     private var timeControlStatusObserver: NSKeyValueObservation?
+    private var muteStatusObserver: NSKeyValueObservation?
     private var tracksObserver: NSKeyValueObservation?
+
+    private lazy var strategy: PlayingStrategy = {
+        dependencies.provide(for: config)
+    }()
+
+    private lazy var innerEventsHandler: InnerEventsHandler = {
+        let service = AnalyticsNetworkService(transport: Transport(), config: Kinescope.shared.config)
+        return InnerEventsProtoHandler(service: service)
+    }()
 
     private var time: TimeInterval = 0 {
         didSet {
             updateTimeline()
         }
     }
+
+    private let config: KinescopePlayerConfig
+
+    private weak var miniView: KinescopePlayerView?
+
+    private var currentQuality = ""
+    private var currentSubtitles = ""
     private var isSeeking = false
     private var isPreparingSeek = false
     private var isManualQuality = false
-    private var currentQuality = ""
     private var isPlaying = false
     private var isOverlayed = false
     private var savedTime: CMTime = .zero
-    private weak var miniView: KinescopePlayerView?
-
     private var video: KinescopeVideo?
-    private let config: KinescopePlayerConfig
     private var options = [KinescopePlayerOption]()
 
     private var textStyleRules: [AVTextStyleRule]? {
@@ -77,6 +83,7 @@ public class KinescopeFullScreenVideoPlayer: KinescopePlayer {
     init(config: KinescopePlayerConfig, dependencies: KinescopePlayerDependencies) {
         self.dependencies = dependencies
         self.config = config
+        self.strategy.player.isMuted = config.isMuted
         addNotofications()
     }
 
@@ -132,6 +139,7 @@ public class KinescopeFullScreenVideoPlayer: KinescopePlayer {
         observePlaybackTime()
         addPlayerTimeControlStatusObserver()
         addPlayerStatusObserver()
+        addMuteObserver()
     }
 
     public func detach(view: KinescopePlayerView) {
@@ -142,11 +150,11 @@ public class KinescopeFullScreenVideoPlayer: KinescopePlayer {
         removePlaybackTimeObserver()
         removePlayerTimeControlStatusObserver()
         removePlayerStatusObserver()
+        removeMuteObserver()
     }
 
     public func select(quality: KinescopeVideoQuality) {
         guard let item = quality.item else {
-            // Log here critical error
             return
         }
 
@@ -202,25 +210,18 @@ private extension KinescopeFullScreenVideoPlayer {
     }
 
     func makePlayerOptions(from video: KinescopeVideo) -> [KinescopePlayerOption] {
-        var options: [KinescopePlayerOption] = [.airPlay, .settings, .fullscreen, .more]
-
-        if !video.assets.isEmpty {
-            options.insert(.download, at: 1)
-        }
-
-        if !video.additionalMaterials.isEmpty {
-            options.insert(.attachments, at: 0)
-        }
+        var options: [KinescopePlayerOption] = [.airPlay, .settings]
 
         if AVPictureInPictureController.isPictureInPictureSupported() {
             options.insert(.pip, at: options.count - 2)
         }
 
-        if !video.subtitles.isEmpty {
-            options.insert(.subtitles, at: 0)
+        if options.count > 2 {
+            options.append(.more)
         }
 
         self.options = options
+
         return options
     }
 
@@ -368,21 +369,16 @@ private extension KinescopeFullScreenVideoPlayer {
                 }
 
                 let height = String(format: "%.0f", size.height)
-
-                let qualities = video.assets
-                    .compactMap { $0.quality }
-                    .filter { $0.hasPrefix(height) }
-
+                let qualities = video.assets.compactMap { $0.quality }.filter { $0.hasPrefix(height) }
                 let expectedQuality: String?
-                if frameRate > 30.0 {
+
+                if frameRate > 30 {
                     expectedQuality = qualities.first { $0.hasSuffix("60") }
                 } else {
                     expectedQuality = qualities.first { $0.hasPrefix(height) && !$0.hasSuffix("60") }
                 }
 
-                guard
-                    let quality = expectedQuality
-                else {
+                guard let quality = expectedQuality else {
                     return
                 }
 
@@ -392,6 +388,7 @@ private extension KinescopeFullScreenVideoPlayer {
                     message: "AVPlayerItem.presentationSize – \(item.presentationSize)",
                     level: KinescopeLoggerLevel.player
                 )
+
                 self.delegate?.player(changedPresentationSizeTo: item.presentationSize)
             }
         )
@@ -402,17 +399,44 @@ private extension KinescopeFullScreenVideoPlayer {
         self.tracksObserver = nil
     }
 
+    func addMuteObserver() {
+        self.muteStatusObserver = self.strategy.player.observe(
+            \.isMuted,
+             options: [.new, .old],
+             changeHandler: { [weak self] _, changes in
+                 guard let self = self, let newValue = changes.newValue else {
+                     return
+                 }
+
+                 self.view?.change(isMute: newValue)
+             }
+        )
+    }
+
+    func removeMuteObserver() {
+        self.muteStatusObserver?.invalidate()
+        self.muteStatusObserver = nil
+    }
+
     func addNotofications() {
-        NotificationCenter.default.addObserver(self, selector: #selector(appDidEnterForeground),
-                                               name: UIApplication.willEnterForegroundNotification,
-                                               object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(appDidEnterBackground),
-                                               name: UIApplication.didEnterBackgroundNotification,
-                                               object: nil)
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(changeOrientation),
-                                               name: UIDevice.orientationDidChangeNotification,
-                                               object: nil)
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(appDidEnterForeground),
+            name: UIApplication.willEnterForegroundNotification,
+            object: nil
+        )
+
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(appDidEnterBackground),
+            name: UIApplication.didEnterBackgroundNotification,
+            object: nil
+        )
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(changeOrientation),
+            name: UIDevice.orientationDidChangeNotification,
+            object: nil
+        )
     }
 
     func seek(to seconds: TimeInterval) {
@@ -450,13 +474,15 @@ private extension KinescopeFullScreenVideoPlayer {
         }
     }
 
-    @objc func appDidEnterForeground() {
+    @objc
+    func appDidEnterForeground() {
         if !(view?.pipController?.isPictureInPictureActive ?? false) {
             view?.playerView.player = strategy.player
         }
     }
 
-    @objc func appDidEnterBackground() {
+    @objc
+    func appDidEnterBackground() {
         if !(view?.pipController?.isPictureInPictureActive ?? false) {
             view?.playerView.player = nil
         }

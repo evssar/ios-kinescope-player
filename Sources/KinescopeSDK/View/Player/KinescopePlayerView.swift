@@ -113,6 +113,9 @@ public class KinescopePlayerView: UIView {
         }
     }
 
+    func change(isMute: Bool) {
+        overlay?.set(isMute: isMute)
+    }
 }
 
 // MARK: - Public
